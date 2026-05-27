@@ -62,6 +62,7 @@ const getBodegaRecommendation = (estatus) => {
 };
 
 function NovedadRow({ order, i }) {
+  const { updateComment } = useData();
   const [historial, setHistorial] = useState(order['historial_gestion'] || '');
   const [estado, setEstado] = useState(order['estado_gestion'] || 'Pendiente');
   const [saving, setSaving] = useState(false);
@@ -94,6 +95,7 @@ function NovedadRow({ order, i }) {
         setSaved(true);
         order['historial_gestion'] = historial;
         order['estado_gestion'] = estado;
+        updateComment(order['id'], historial, estado);
         setTimeout(() => setSaved(false), 2000);
       } else {
         alert('Error al guardar');
@@ -189,6 +191,7 @@ function NovedadRow({ order, i }) {
 }
 
 export function DelayedRow({ order, i }) {
+  const { updateComment } = useData();
   const [historial, setHistorial] = useState(order['historial_gestion'] || '');
   const [estado, setEstado] = useState(order['estado_gestion'] || 'Pendiente');
   const [saving, setSaving] = useState(false);
@@ -219,6 +222,7 @@ export function DelayedRow({ order, i }) {
         setSaved(true);
         order['historial_gestion'] = historial;
         order['estado_gestion'] = estado;
+        updateComment(order['id'], historial, estado);
         setTimeout(() => setSaved(false), 2000);
       } else {
         alert('Error al guardar');

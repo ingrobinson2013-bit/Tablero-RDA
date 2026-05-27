@@ -80,6 +80,7 @@ export function DataProvider({ children }) {
     customDateEnd: '',
     minDataDate: '',
     maxDataDate: '',
+    commentsMap:  {}, // Almacena comentarios indexados por ID de orden
   });
 
   const toggleRole = useCallback(() => {
@@ -129,63 +130,79 @@ export function DataProvider({ children }) {
     }
   }, [state.rawRows, state.dateFilter, state.customDateStart, state.customDateEnd]);
 
-  // Carga inicial desde Supabase y Meta
-  useEffect(() => {
-    async function loadFromDB() {
-      try {
-        const [resDb, resMeta] = await Promise.all([
-          fetch('/api/fetch'),
-          fetch('/api/meta')
-        ]);
-        
-        const resultDb = await resDb.json();
-        const resultMeta = await resMeta.json();
-        
-        if (!resDb.ok) throw new Error(resultDb.error || 'Error al conectar con la base de datos');
-        
-        const metaData = resultMeta.configured ? resultMeta.data : null;
+  // Carga desde Supabase y Meta
+  const loadFromDB = useCallback(async () => {
+    try {
+      setState(s => ({ ...s, loading: true, error: null }));
+      const [resDb, resMeta] = await Promise.all([
+        fetch('/api/fetch'),
+        fetch('/api/meta')
+      ]);
+      
+      const resultDb = await resDb.json();
+      const resultMeta = await resMeta.json();
+      
+      if (!resDb.ok) throw new Error(resultDb.error || 'Error al conectar con la base de datos');
+      
+      const metaData = resultMeta.configured ? resultMeta.data : null;
 
-        if (resultDb.records && resultDb.records.length > 0) {
-          console.log(`[NODIA OPS] Cargados ${resultDb.records.length} registros desde Supabase`);
-          
-          // Mapear de vuelta al formato Excel que espera analyzeData
-          const excelRows = resultDb.records.map(mapDBToExcel);
-          const analyzed = analyzeData(excelRows);
-          
-          setState(s => ({
-            ...s,
-            loaded:     true,
-            loading:    false,
-            fileName:   `Base de Datos (${resultDb.records.length} registros)`,
-            lastUpload: resultDb.lastUpload,
-            data:       analyzed,
-            rawRows:    excelRows,
-            metaData:   metaData,
-            error:      null,
-          }));
-        } else {
-          // BD vacía
-          setState(s => ({
-            ...s,
-            loaded:   true,
-            loading:  false,
-            fileName: '',
-            metaData: metaData,
-            error:    null
-          }));
-        }
-      } catch (err) {
-        console.error('[NODIA OPS] Error loading from DB:', err);
+      if (resultDb.records && resultDb.records.length > 0) {
+        console.log(`[NODIA OPS] Cargados ${resultDb.records.length} registros desde Supabase`);
+        
+        // Crear mapa de comentarios y estados de gestión de Supabase
+        const commentsMap = {};
+        resultDb.records.forEach(r => {
+          if (r.historial_gestion || r.estado_gestion) {
+            commentsMap[r.id] = {
+              historial_gestion: r.historial_gestion || '',
+              estado_gestion: r.estado_gestion || 'Pendiente'
+            };
+          }
+        });
+
+        // Mapear de vuelta al formato Excel que espera analyzeData
+        const excelRows = resultDb.records.map(mapDBToExcel);
+        const analyzed = analyzeData(excelRows);
+        
         setState(s => ({
           ...s,
-          loaded:  true,
-          loading: false,
-          error:   err.message || 'Error al cargar de Supabase. Sube el Excel manualmente.',
+          loaded:      true,
+          loading:     false,
+          fileName:    `Base de Datos (${resultDb.records.length} registros)`,
+          lastUpload:  resultDb.lastUpload,
+          data:        analyzed,
+          rawRows:     excelRows,
+          metaData:    metaData,
+          commentsMap: commentsMap,
+          error:       null,
+        }));
+      } else {
+        // BD vacía
+        setState(s => ({
+          ...s,
+          loaded:      true,
+          loading:     false,
+          fileName:    '',
+          metaData:    metaData,
+          commentsMap: {},
+          error:       null
         }));
       }
+    } catch (err) {
+      console.error('[NODIA OPS] Error loading from DB:', err);
+      setState(s => ({
+        ...s,
+        loaded:  true,
+        loading: false,
+        error:   err.message || 'Error al cargar de Supabase. Sube el Excel manualmente.',
+      }));
     }
-    loadFromDB();
   }, []);
+
+  // Carga inicial
+  useEffect(() => {
+    loadFromDB();
+  }, [loadFromDB]);
 
   const loadFile = useCallback((file) => {
     if (!file) return;
@@ -207,17 +224,34 @@ export function DataProvider({ children }) {
           return;
         }
 
-        const analyzed = analyzeData(rows);
-        setState(s => ({
-          ...s,
-          loaded:   true,
-          loading:  false,
-          fileName: file.name,
-          data:     analyzed,
-          rawRows:  rows,
-          error:    null,
-          _file:    file,   // guardamos referencia para upload posterior
-        }));
+        // Fusionar comentarios existentes desde Supabase en las filas del Excel recién cargado
+        setState(s => {
+          const mergedRows = rows.map(row => {
+            const idKey = Object.keys(row).find(k => k.toLowerCase().trim() === 'id');
+            const id = idKey ? String(row[idKey] || '').trim() : '';
+            const comment = s.commentsMap[id];
+            if (comment) {
+              return {
+                ...row,
+                'historial_gestion': comment.historial_gestion,
+                'estado_gestion': comment.estado_gestion
+              };
+            }
+            return row;
+          });
+
+          const analyzed = analyzeData(mergedRows);
+          return {
+            ...s,
+            loaded:   true,
+            loading:  false,
+            fileName: file.name,
+            data:     analyzed,
+            rawRows:  mergedRows,
+            error:    null,
+            _file:    file,
+          };
+        });
       } catch (err) {
         console.error('[NODIA OPS] Error al procesar Excel:', err);
         setState(s => ({ ...s, loading: false, error: 'Error al leer el archivo.' }));
@@ -226,7 +260,7 @@ export function DataProvider({ children }) {
     reader.readAsArrayBuffer(file);
   }, []);
 
-  // Subir datos a Supabase via API Route del servidor (usa service_role en el server)
+  // Subir datos a Supabase via API Route del servidor
   const pushToSupabase = useCallback(async () => {
     if (!state.rawRows?.length) {
       alert('No hay datos cargados para subir.');
@@ -246,19 +280,50 @@ export function DataProvider({ children }) {
 
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || 'Error en el servidor');
+      
+      // Recargar desde la base de datos para recuperar y mantener sincronizados los comentarios/estados
+      await loadFromDB();
+      
       setState(s => ({ ...s, uploading: false, uploadResult: result }));
     } catch (err) {
       console.error('[NODIA OPS] Error upload:', err);
       setState(s => ({ ...s, uploading: false, uploadResult: { error: err.message } }));
     }
-  }, [state.rawRows, state.fileName]);
+  }, [state.rawRows, state.fileName, loadFromDB]);
+
+  // Actualizar un comentario modificado en tiempo real en el estado global
+  const updateComment = useCallback((id, historial, estado) => {
+    setState(s => {
+      const newCommentsMap = { ...s.commentsMap };
+      newCommentsMap[id] = { historial_gestion: historial, estado_gestion: estado };
+      
+      const newRawRows = s.rawRows ? s.rawRows.map(row => {
+        const idKey = Object.keys(row).find(k => k.toLowerCase().trim() === 'id');
+        const rowId = idKey ? String(row[idKey] || '').trim() : '';
+        if (rowId === String(id)) {
+          return {
+            ...row,
+            'historial_gestion': historial,
+            'estado_gestion': estado
+          };
+        }
+        return row;
+      }) : null;
+      
+      return {
+        ...s,
+        commentsMap: newCommentsMap,
+        rawRows: newRawRows
+      };
+    });
+  }, []);
 
   const reset = useCallback(() => {
-    setState({ loaded: false, loading: false, uploading: false, uploadResult: null, fileName: '', data: null, rawRows: null, error: null, dateFilter: 'all' });
+    setState({ loaded: false, loading: false, uploading: false, uploadResult: null, fileName: '', data: null, rawRows: null, error: null, dateFilter: 'all', commentsMap: {} });
   }, []);
 
   return (
-    <DataContext.Provider value={{ ...state, loadFile, pushToSupabase, reset, toggleRole, setRole, setDateFilter }}>
+    <DataContext.Provider value={{ ...state, loadFile, pushToSupabase, reset, toggleRole, setRole, setDateFilter, updateComment }}>
       {children}
     </DataContext.Provider>
   );
