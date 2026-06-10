@@ -192,6 +192,12 @@ export function analyzeData(allRows, dateFilter = 'all', customStart = '', custo
     shippingReturns: 0,   // Fletes de devoluciones (pérdida)
     commissions: 0,       // Comisiones de entregadas
     netProfit: 0,         // Utilidad neta calculada
+    // Dropi Exact Mirror
+    dropiSinRecaudo: 0,
+    dropiConRecaudo: 0,
+    dropiRecaudado: 0,
+    dropiPorRecaudar: 0,
+    dropiUtilidadEstimada: 0,
     // Estados Exclusivos (suman exactamente totalOrders)
     exCancelado: 0,
     exBodega: 0,
@@ -239,6 +245,10 @@ export function analyzeData(allRows, dateFilter = 'all', customStart = '', custo
     const seller  = col.vendedor     ? String(row[col.vendedor]     || 'Sin Vendedor').trim()  : 'Sin Vendedor';
     const novedad = col.novedad      ? String(row[col.novedad]      || '').trim()               : '';
 
+    const isSinRecaudo = col.tipoEnvio 
+      ? String(row[col.tipoEnvio] || '').trim().toUpperCase().includes('SIN RECAUDO')
+      : false;
+
     // Fecha de la orden (transaccional) — Priorizar col.fecha
     const rawDate = col.fecha
       ? String(row[col.fecha] || row[col.fechaReporte] || '')
@@ -282,6 +292,21 @@ export function analyzeData(allRows, dateFilter = 'all', customStart = '', custo
       stats.grossCogs += costoTotal;
       stats.grossShipping += flete;
       stats.grossCommissions += comision;
+
+      // Dropi Exact Mirror
+      if (isSinRecaudo) {
+        stats.dropiSinRecaudo += total;
+      } else {
+        stats.dropiConRecaudo += total;
+      }
+
+      if (!st.isReturned) {
+        stats.dropiUtilidadEstimada += (total - costoTotal - flete - comision);
+      }
+
+      if (!st.isDelivered && !st.isReturned && !isSinRecaudo) {
+        stats.dropiPorRecaudar += total;
+      }
     } else {
       stats.cancelledRevenue += total;  // registro separado para transparencia
     }
@@ -306,6 +331,10 @@ export function analyzeData(allRows, dateFilter = 'all', customStart = '', custo
       stats.shipping    += flete;
       stats.commissions += comision;
       stats.netProfit   += ganancia > 0 ? ganancia : (total - costoTotal - flete - comision);
+
+      if (!isSinRecaudo) {
+        stats.dropiRecaudado += total;
+      }
     }
 
     if (st.isReturned) {

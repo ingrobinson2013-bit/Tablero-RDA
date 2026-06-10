@@ -1001,27 +1001,27 @@ export default function DashboardPage() {
               </tr>
               <tr className="bg-surface-container-low/30 hover:bg-surface-container/50 transition-colors">
                 <td className="py-3 px-6 text-on-surface-variant">Total utilidad estimada:</td>
-                <td className="py-3 px-6 font-bold text-on-surface">{fmt((stats.grossRevenue || 0) - (stats.grossCogs || 0) - (stats.grossShipping || 0) - (stats.grossCommissions || 0))}</td>
+                <td className="py-3 px-6 font-bold text-on-surface">{fmt(stats.dropiUtilidadEstimada || 0)}</td>
               </tr>
               <tr className="hover:bg-surface-container/50 transition-colors">
                 <td className="py-3 px-6 text-on-surface-variant">Total flete:</td>
-                <td className="py-3 px-6 font-bold text-on-surface">{fmt((stats.shipping || 0) + (stats.shippingReturns || 0))}</td>
+                <td className="py-3 px-6 font-bold text-on-surface">{fmt(stats.grossShipping || 0)}</td>
               </tr>
               <tr className="bg-surface-container-low/30 hover:bg-surface-container/50 transition-colors">
                 <td className="py-3 px-6 text-on-surface-variant">Total con recaudo:</td>
-                <td className="py-3 px-6 font-bold text-on-surface">{fmt(stats.grossRevenue || 0)}</td>
+                <td className="py-3 px-6 font-bold text-on-surface">{fmt(stats.dropiConRecaudo || 0)}</td>
               </tr>
               <tr className="hover:bg-surface-container/50 transition-colors">
                 <td className="py-3 px-6 text-on-surface-variant">Total sin recaudo:</td>
-                <td className="py-3 px-6 font-bold text-on-surface">$0</td>
+                <td className="py-3 px-6 font-bold text-on-surface">{fmt(stats.dropiSinRecaudo || 0)}</td>
               </tr>
               <tr className="bg-surface-container-low/30 hover:bg-surface-container/50 transition-colors">
                 <td className="py-3 px-6 text-on-surface-variant">Total recaudado:</td>
-                <td className="py-3 px-6 font-bold text-on-surface">{fmt(stats.revenue || 0)}</td>
+                <td className="py-3 px-6 font-bold text-on-surface">{fmt(stats.dropiRecaudado || 0)}</td>
               </tr>
               <tr className="hover:bg-surface-container/50 transition-colors">
                 <td className="py-3 px-6 text-on-surface-variant">Total por recaudar:</td>
-                <td className="py-3 px-6 font-bold text-on-surface">{fmt(Math.max(0, (stats.grossRevenue || 0) - (stats.revenue || 0)))}</td>
+                <td className="py-3 px-6 font-bold text-on-surface">{fmt(stats.dropiPorRecaudar || 0)}</td>
               </tr>
               <tr className="bg-surface-container-low/30 hover:bg-surface-container/50 transition-colors">
                 <td className="py-3 px-6 text-on-surface-variant">Total pedidos pendientes:</td>
