@@ -47,6 +47,7 @@ export default function FinanzasPage() {
         delivered: dropi.delivered,
         revenue: dropi.revenue,
         grossRevenue: dropi.grossRevenue || 0,
+        ganancia: dropi.ganancia || 0,
         cogs: dropi.cogs || 0,
         shipping: dropi.shipping || 0,
         commissions: dropi.commissions || 0,
@@ -66,7 +67,7 @@ export default function FinanzasPage() {
       
       if (!grouped[key]) grouped[key] = { 
         key, spend: 0, orders: 0, confirmed: 0, delivered: 0, revenue: 0, grossRevenue: 0,
-        cogs: 0, shipping: 0, commissions: 0, grossCogs: 0, grossShipping: 0, grossCommissions: 0, shippingReturns: 0
+        ganancia: 0, cogs: 0, shipping: 0, commissions: 0, grossCogs: 0, grossShipping: 0, grossCommissions: 0, shippingReturns: 0
       };
       grouped[key].spend += row.spend;
       grouped[key].orders += row.orders;
@@ -74,6 +75,7 @@ export default function FinanzasPage() {
       grouped[key].delivered += row.delivered;
       grouped[key].revenue += row.revenue;
       grouped[key].grossRevenue += row.grossRevenue;
+      grouped[key].ganancia += row.ganancia;
       grouped[key].cogs += row.cogs;
       grouped[key].shipping += row.shipping;
       grouped[key].commissions += row.commissions;
@@ -111,14 +113,14 @@ export default function FinanzasPage() {
           if (typeof curr[k] === 'number') acc[k] += curr[k];
         });
         return acc;
-      }, { revenue: 0, grossRevenue: 0, cogs: 0, shipping: 0, commissions: 0, grossCogs: 0, grossShipping: 0, grossCommissions: 0, shippingReturns: 0 });
+      }, { revenue: 0, grossRevenue: 0, ganancia: 0, cogs: 0, shipping: 0, commissions: 0, grossCogs: 0, grossShipping: 0, grossCommissions: 0, shippingReturns: 0 });
     }
     
     // Find the specific period in crossData
     const found = crossData.find(d => d.key === selectedPeriod);
     if (found) return found;
 
-    return { revenue: 0, grossRevenue: 0, cogs: 0, shipping: 0, commissions: 0, grossCogs: 0, grossShipping: 0, grossCommissions: 0, shippingReturns: 0 };
+    return { revenue: 0, grossRevenue: 0, ganancia: 0, cogs: 0, shipping: 0, commissions: 0, grossCogs: 0, grossShipping: 0, grossCommissions: 0, shippingReturns: 0 };
   }, [crossData, timeFrame, selectedPeriod]);
 
   // Use filtered spend for Operational Margin if no manual entry
@@ -191,7 +193,7 @@ export default function FinanzasPage() {
   
   const baseTariff = 3000;
   const bonusTariff = 500;
-  const hasBonus = tasaDevolucionReal < 0.20;
+  const hasBonus = tasaDevolucionReal < 0.18;
   const tarifaAplicada = hasBonus ? (baseTariff + bonusTariff) : baseTariff;
   
   const pagoCOO = pedidosLiquidados * tarifaAplicada;
@@ -268,7 +270,7 @@ export default function FinanzasPage() {
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-outline uppercase">Meta de Bono:</span>
-                <span className="font-bold text-tertiary">&lt; 20% devoluciones</span>
+                <span className="font-bold text-tertiary">&lt; 18% devoluciones</span>
               </div>
             </div>
           </div>
@@ -307,7 +309,7 @@ export default function FinanzasPage() {
                   <span className="material-symbols-outlined text-base">warning</span>
                   Bono no alcanzado
                 </div>
-                Baja tu tasa de devoluciones a menos del ${(0.20 * 100).toFixed(0)}% gestionando rápido las Novedades para ganar {fmt(bonusTariff)} extras por paquete.
+                Baja tu tasa de devoluciones a menos del ${(0.18 * 100).toFixed(0)}% gestionando rápido las Novedades para ganar {fmt(bonusTariff)} extras por paquete.
               </div>
             )}
           </div>
@@ -555,7 +557,7 @@ export default function FinanzasPage() {
                 <span>{fmt(pedidosLiquidados * baseTariff)}</span>
               </div>
               <div className="flex justify-between items-center text-[9px] font-label-mono text-on-surface-variant">
-                <span>Bono Eficiencia (&lt;20% Dev):</span>
+                <span>Bono Eficiencia (&lt;18% Dev):</span>
                 <span className={hasBonus ? 'text-emerald-600 font-bold' : 'line-through opacity-45'}>{fmt(pedidosLiquidados * bonusTariff)}</span>
               </div>
             </div>

@@ -33,7 +33,7 @@ export async function GET(request) {
     }
 
     // 2. Fetch Insights Diarios (Para la gráfica de CAC/CPA diario)
-    const urlDaily = `https://graph.facebook.com/v19.0/act_${adAccountId}/insights?fields=spend,actions,action_values&time_increment=1&date_preset=${datePreset}&access_token=${token}`;
+    const urlDaily = `https://graph.facebook.com/v19.0/act_${adAccountId}/insights?fields=spend,actions,action_values&time_increment=1&date_preset=${datePreset}&limit=1000&access_token=${token}`;
     const resDaily = await fetch(urlDaily);
     const dataDaily = await resDaily.json();
 
