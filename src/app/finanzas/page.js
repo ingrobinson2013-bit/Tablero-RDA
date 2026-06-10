@@ -189,7 +189,7 @@ export default function FinanzasPage() {
   // Calcular Devolución Real (para métricas visuales y bonos)
   const tasaDevolucionReal = funnelConfirmed > 0 ? (1 - (funnelDelivered / funnelConfirmed)) : tasaDevolucion;
   
-  const baseTariff = 2000;
+  const baseTariff = 3000;
   const bonusTariff = 500;
   const hasBonus = tasaDevolucionReal < 0.20;
   const tarifaAplicada = hasBonus ? (baseTariff + bonusTariff) : baseTariff;
@@ -307,7 +307,7 @@ export default function FinanzasPage() {
                   <span className="material-symbols-outlined text-base">warning</span>
                   Bono no alcanzado
                 </div>
-                Baja tu tasa de devoluciones a menos del 20% gestionando rápido las Novedades para ganar $500 extras por paquete.
+                Baja tu tasa de devoluciones a menos del ${(0.20 * 100).toFixed(0)}% gestionando rápido las Novedades para ganar {fmt(bonusTariff)} extras por paquete.
               </div>
             )}
           </div>
