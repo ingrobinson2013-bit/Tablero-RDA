@@ -318,12 +318,31 @@ export function DataProvider({ children }) {
     });
   }, []);
 
+  const deleteOrder = useCallback((id) => {
+    setState(s => {
+      const newRawRows = s.rawRows ? s.rawRows.filter(row => {
+        const idKey = Object.keys(row).find(k => k.toLowerCase().trim() === 'id');
+        const rowId = idKey ? String(row[idKey] || '').trim() : '';
+        return rowId !== String(id);
+      }) : null;
+      
+      const newCommentsMap = { ...s.commentsMap };
+      delete newCommentsMap[id];
+
+      return {
+        ...s,
+        rawRows: newRawRows,
+        commentsMap: newCommentsMap
+      };
+    });
+  }, []);
+
   const reset = useCallback(() => {
     setState({ loaded: false, loading: false, uploading: false, uploadResult: null, fileName: '', data: null, rawRows: null, error: null, dateFilter: 'all', commentsMap: {} });
   }, []);
 
   return (
-    <DataContext.Provider value={{ ...state, loadFile, pushToSupabase, reset, toggleRole, setRole, setDateFilter, updateComment }}>
+    <DataContext.Provider value={{ ...state, loadFile, pushToSupabase, reset, toggleRole, setRole, setDateFilter, updateComment, deleteOrder }}>
       {children}
     </DataContext.Provider>
   );

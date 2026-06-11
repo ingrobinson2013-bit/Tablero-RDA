@@ -62,11 +62,12 @@ const getBodegaRecommendation = (estatus) => {
 };
 
 function NovedadRow({ order, i }) {
-  const { updateComment } = useData();
+  const { updateComment, deleteOrder } = useData();
   const [historial, setHistorial] = useState(order['historial_gestion'] || '');
   const [estado, setEstado] = useState(order['estado_gestion'] || 'Pendiente');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const estatus = order['estatus'] || 'N/A';
   const isError = estatus.toUpperCase().includes('NOVEDAD');
@@ -105,6 +106,30 @@ function NovedadRow({ order, i }) {
       alert('Error de conexión');
     }
     setSaving(false);
+  };
+
+  const handleDelete = async () => {
+    if (!confirm('¿Estás seguro de que deseas eliminar este pedido del sistema? Esta acción borrará permanentemente la orden de tu base de datos y ya no aparecerá en las alertas.')) {
+      return;
+    }
+    setDeleting(true);
+    try {
+      const res = await fetch('/api/update-novedad', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: order['id'] })
+      });
+      if (res.ok) {
+        deleteOrder(order['id']);
+      } else {
+        const data = await res.json();
+        alert('Error al eliminar: ' + (data.error || 'Intenta de nuevo'));
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error de conexión al eliminar');
+    }
+    setDeleting(false);
   };
 
   return (
@@ -175,7 +200,7 @@ function NovedadRow({ order, i }) {
         </select>
         <button 
           onClick={handleSave}
-          disabled={saving}
+          disabled={saving || deleting}
           className={`w-full px-2 py-1.5 rounded text-xs font-bold flex items-center justify-center gap-1 transition-all ${
             saved ? 'bg-emerald-500 text-white' : 
             saving ? 'bg-surface-container-high text-outline' :
@@ -185,17 +210,26 @@ function NovedadRow({ order, i }) {
           {saved ? <><span className="material-symbols-outlined text-[14px]">check</span> Ok</> : 
            saving ? 'Guardando...' : 'Guardar'}
         </button>
+        <button 
+          onClick={handleDelete}
+          disabled={saving || deleting}
+          className="w-full px-2 py-1.5 rounded text-xs font-bold flex items-center justify-center gap-1 bg-error/15 hover:bg-error/25 text-error transition-all shadow-sm"
+        >
+          <span className="material-symbols-outlined text-[14px]">delete</span>
+          {deleting ? 'Borrando...' : 'Anular / Borrar'}
+        </button>
       </td>
     </tr>
   );
 }
 
 export function DelayedRow({ order, i }) {
-  const { updateComment } = useData();
+  const { updateComment, deleteOrder } = useData();
   const [historial, setHistorial] = useState(order['historial_gestion'] || '');
   const [estado, setEstado] = useState(order['estado_gestion'] || 'Pendiente');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const clienteNombre = order['nombre cliente'] || 'Desconocido';
   const clienteTelefono = order['teléfono'] || order['telefono'] || '';
@@ -232,6 +266,30 @@ export function DelayedRow({ order, i }) {
       alert('Error de conexión');
     }
     setSaving(false);
+  };
+
+  const handleDelete = async () => {
+    if (!confirm('¿Estás seguro de que deseas eliminar este pedido del sistema? Esta acción borrará permanentemente la orden de tu base de datos y ya no aparecerá en las alertas.')) {
+      return;
+    }
+    setDeleting(true);
+    try {
+      const res = await fetch('/api/update-novedad', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: order['id'] })
+      });
+      if (res.ok) {
+        deleteOrder(order['id']);
+      } else {
+        const data = await res.json();
+        alert('Error al eliminar: ' + (data.error || 'Intenta de nuevo'));
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error de conexión al eliminar');
+    }
+    setDeleting(false);
   };
 
   return (
@@ -301,7 +359,7 @@ export function DelayedRow({ order, i }) {
         </select>
         <button 
           onClick={handleSave}
-          disabled={saving}
+          disabled={saving || deleting}
           className={`w-full px-2 py-1.5 rounded text-xs font-bold flex items-center justify-center gap-1 transition-all ${
             saved ? 'bg-emerald-500 text-white' : 
             saving ? 'bg-surface-container-high text-outline' :
@@ -310,6 +368,14 @@ export function DelayedRow({ order, i }) {
         >
           {saved ? <><span className="material-symbols-outlined text-[14px]">check</span> Ok</> : 
            saving ? '...' : 'Guardar'}
+        </button>
+        <button 
+          onClick={handleDelete}
+          disabled={saving || deleting}
+          className="w-full px-2 py-1.5 rounded text-xs font-bold flex items-center justify-center gap-1 bg-error/15 hover:bg-error/25 text-error transition-all shadow-sm"
+        >
+          <span className="material-symbols-outlined text-[14px]">delete</span>
+          {deleting ? 'Borrando...' : 'Anular / Borrar'}
         </button>
       </td>
     </tr>

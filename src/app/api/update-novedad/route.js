@@ -37,3 +37,31 @@ export async function POST(request) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
+
+export async function DELETE(request) {
+  try {
+    const { id } = await request.json();
+    
+    if (!id) {
+      return NextResponse.json({ error: 'Missing order ID' }, { status: 400 });
+    }
+
+    const supabase = getServiceClient();
+
+    const { data, error } = await supabase
+      .from('dropi_orders')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('[DELETE ORDER API] Error:', error.message);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, data });
+
+  } catch (err) {
+    console.error('[DELETE ORDER API] Exception:', err.message);
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
