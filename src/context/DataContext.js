@@ -204,61 +204,79 @@ export function DataProvider({ children }) {
     loadFromDB();
   }, [loadFromDB]);
 
-  const loadFile = useCallback((file) => {
+  const loadFile = useCallback(async (file) => {
     if (!file) return;
     if (!file.name.match(/\.(xlsx|xls)$/i)) {
       alert('Sube un archivo Excel (.xlsx o .xls) válido de Dropi.');
       return;
     }
 
-    setState(s => ({ ...s, loading: true, error: null, fileName: 'Procesando...', uploadResult: null }));
+    setState(s => ({ ...s, loading: true, uploading: true, error: null, fileName: 'Procesando...', uploadResult: null }));
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
         const wb   = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
         const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
 
         if (!rows.length) {
-          setState(s => ({ ...s, loading: false, error: 'El archivo está vacío.' }));
+          setState(s => ({ ...s, loading: false, uploading: false, error: 'El archivo está vacío.' }));
           return;
         }
 
-        // Fusionar comentarios existentes desde Supabase en las filas del Excel recién cargado
+        // Obtener commentsMap actual de manera segura
+        let currentCommentsMap = {};
         setState(s => {
-          const mergedRows = rows.map(row => {
-            const idKey = Object.keys(row).find(k => k.toLowerCase().trim() === 'id');
-            const id = idKey ? String(row[idKey] || '').trim() : '';
-            const comment = s.commentsMap[id];
-            if (comment) {
-              return {
-                ...row,
-                'historial_gestion': comment.historial_gestion,
-                'estado_gestion': comment.estado_gestion
-              };
-            }
-            return row;
-          });
-
-          const analyzed = analyzeData(mergedRows);
-          return {
-            ...s,
-            loaded:   true,
-            loading:  false,
-            fileName: file.name,
-            data:     analyzed,
-            rawRows:  mergedRows,
-            error:    null,
-            _file:    file,
-          };
+          currentCommentsMap = s.commentsMap;
+          return s;
         });
+
+        // Fusionar comentarios existentes desde Supabase en las filas del Excel recién cargado
+        const mergedRows = rows.map(row => {
+          const idKey = Object.keys(row).find(k => k.toLowerCase().trim() === 'id');
+          const id = idKey ? String(row[idKey] || '').trim() : '';
+          const comment = currentCommentsMap[id];
+          if (comment) {
+            return {
+              ...row,
+              'historial_gestion': comment.historial_gestion,
+              'estado_gestion': comment.estado_gestion
+            };
+          }
+          return row;
+        });
+
+        // Transformar y subir a Supabase automáticamente
+        const { transformRows } = await import('@/lib/uploadToSupabase');
+        const records = transformRows(mergedRows, file.name);
+
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ records, fileName: file.name }),
+        });
+
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || 'Error al subir los datos a Supabase');
+
+        // Recargar desde Supabase para asegurar sincronía
+        await loadFromDB();
+
+        setState(s => ({
+          ...s,
+          uploading: false,
+          uploadResult: result,
+          error: null
+        }));
+
       } catch (err) {
-        console.error('[NODIA OPS] Error al procesar Excel:', err);
-        setState(s => ({ ...s, loading: false, error: 'Error al leer el archivo.' }));
+        console.error('[NODIA OPS] Error al procesar y subir Excel:', err);
+        setState(s => ({ ...s, loading: false, uploading: false, error: err.message || 'Error al procesar el archivo.' }));
+        alert('ERROR AL SUBIR A SUPABASE: ' + (err.message || 'Error desconocido'));
       }
     };
     reader.readAsArrayBuffer(file);
-  }, []);
+  }, [loadFromDB]);
 
   // Subir datos a Supabase via API Route del servidor
   const pushToSupabase = useCallback(async () => {

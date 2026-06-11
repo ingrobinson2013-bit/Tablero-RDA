@@ -2,14 +2,11 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useData } from '@/context/DataContext';
-import { useState, useRef } from 'react';
-import * as XLSX from 'xlsx';
-import { uploadToSupabase } from '@/lib/uploadToSupabase';
+import { useRef } from 'react';
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { loaded } = useData();
-  const [uploading, setUploading] = useState(false);
+  const { loaded, loadFile, uploading } = useData();
   const fileInputRef = useRef(null);
 
     const navSections = [
@@ -39,48 +36,11 @@ export default function Sidebar() {
     }
   ];
 
-  const handleFileUpload = async (e) => {
+  const handleFileUpload = (e) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-
-    setUploading(true);
-    try {
-      const reader = new FileReader();
-      reader.onload = async (evt) => {
-        try {
-          const bstr = evt.target.result;
-          const wb = XLSX.read(bstr, { type: 'binary' });
-          const wsname = wb.SheetNames[0];
-          const ws = wb.Sheets[wsname];
-          const data = XLSX.utils.sheet_to_json(ws, { raw: false, defval: '' });
-
-          // Usar la ruta del API para subir (sin client secrets)
-          const { transformRows } = await import('@/lib/uploadToSupabase');
-          const records = transformRows(data, file.name);
-
-          const res = await fetch('/api/upload', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ records, fileName: file.name }),
-          });
-          
-          const result = await res.json();
-          if (!res.ok) throw new Error(result.error);
-
-          // Limpiar input y forzar recarga para traer nuevos datos de la DB
-          if (fileInputRef.current) fileInputRef.current.value = '';
-          window.location.reload();
-        } catch (error) {
-          console.error("Error al subir a Supabase:", error);
-          alert("ERROR FATAL: " + error.message);
-          setUploading(false);
-        }
-      };
-      reader.readAsBinaryString(file);
-    } catch (error) {
-      console.error("Error al procesar archivo:", error);
-      alert("Error al procesar el archivo. Revisa la consola.");
-      setUploading(false);
+    if (file) {
+      loadFile(file);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
