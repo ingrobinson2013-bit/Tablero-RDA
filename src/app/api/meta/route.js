@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const datePreset = searchParams.get('date_preset') || 'maximum'; // today, yesterday, last_7d, last_30d
@@ -25,7 +27,7 @@ export async function GET(request) {
   try {
     // 1. Fetch de Insights Generales (Totales)
     const urlTotal = `https://graph.facebook.com/v19.0/act_${adAccountId}/insights?fields=spend,action_values,actions,cost_per_action_type,purchase_roas&date_preset=${datePreset}&access_token=${token}`;
-    const resTotal = await fetch(urlTotal);
+    const resTotal = await fetch(urlTotal, { cache: 'no-store' });
     const dataTotal = await resTotal.json();
 
     if (dataTotal.error) {
@@ -34,7 +36,7 @@ export async function GET(request) {
 
     // 2. Fetch Insights Diarios (Para la gráfica de CAC/CPA diario)
     const urlDaily = `https://graph.facebook.com/v19.0/act_${adAccountId}/insights?fields=spend,actions,action_values&time_increment=1&date_preset=${datePreset}&limit=1000&access_token=${token}`;
-    const resDaily = await fetch(urlDaily);
+    const resDaily = await fetch(urlDaily, { cache: 'no-store' });
     const dataDaily = await resDaily.json();
 
     const summary = dataTotal.data?.[0] || {};

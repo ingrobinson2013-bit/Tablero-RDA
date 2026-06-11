@@ -135,8 +135,8 @@ export function DataProvider({ children }) {
     try {
       setState(s => ({ ...s, loading: true, error: null }));
       const [resDb, resMeta] = await Promise.all([
-        fetch('/api/fetch'),
-        fetch('/api/meta')
+        fetch('/api/fetch', { cache: 'no-store' }),
+        fetch('/api/meta', { cache: 'no-store' })
       ]);
       
       const resultDb = await resDb.json();
