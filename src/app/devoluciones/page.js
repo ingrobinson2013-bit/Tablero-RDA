@@ -22,7 +22,7 @@ export default function DevolucionesPage() {
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'Total Devueltos',     val: stats.returned,                            sub: `${stats.returnRate.toFixed(1)}% de despachados`,  color: 'text-rose-600' },
+          { label: 'Total Devueltos',     val: stats.returned,                            sub: `${stats.returnRate.toFixed(1)}% de confirmados`,  color: 'text-rose-600' },
           { label: 'Novedades Activas',   val: stats.novedad,                             sub: `${stats.novedadRate?.toFixed(1)}% pendiente resolver`, color: 'text-amber-600' },
           { label: 'Pérd. por Fletes',    val: fmt(stats.shippingReturns || 0),           sub: 'Costo devolución flete',                           color: 'text-rose-500' },
           { label: 'Tasa Devolución',     val: `${stats.returnRate.toFixed(1)}%`,         sub: stats.returnRate > 10 ? '⚠️ Sobre el umbral' : '✅ Dentro del umbral', color: stats.returnRate > 10 ? 'text-rose-600' : 'text-emerald-600' },

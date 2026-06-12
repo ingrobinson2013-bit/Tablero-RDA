@@ -66,7 +66,7 @@ function classifyStatus(rawStatus) {
   const s = rawStatus.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
 
   // ─── CANCELADOS (no generan ingreso) ───────────────────────────
-  const isCancelled = s === 'CANCELADO' || s.includes('ANULAD');
+  const isCancelled = s === 'CANCELADO' || s.includes('ANULAD') || s.includes('RECHAZAD');
 
   // ─── CONFIRMADOS / EN PREPARACIÓN ─────────────────────────────
   // EN PROCESAMIENTO o ASIGNADO (ya tiene guía)
@@ -470,8 +470,8 @@ export function analyzeData(allRows, dateFilter = 'all', customStart = '', custo
   // === TASAS ===
   stats.confRate     = stats.totalOrders > 0 ? (stats.confirmed  / stats.totalOrders) * 100 : 0;
   stats.dispatchRate = stats.confirmed   > 0 ? (stats.dispatched / stats.confirmed)   * 100 : 0;
-  stats.deliveryRate = stats.dispatched  > 0 ? (stats.delivered  / stats.dispatched)  * 100 : 0;
-  stats.returnRate   = stats.dispatched  > 0 ? (stats.returned   / stats.dispatched)  * 100 : 0;
+  stats.deliveryRate = stats.confirmed   > 0 ? (stats.delivered  / stats.confirmed)   * 100 : 0;
+  stats.returnRate   = stats.confirmed   > 0 ? (stats.returned   / stats.confirmed)   * 100 : 0;
   stats.novedadRate  = stats.dispatched  > 0 ? (stats.novedad    / stats.dispatched)  * 100 : 0;
   stats.confirmationRate = stats.totalOrders > 0 ? (stats.confirmed / stats.totalOrders) * 100 : 0;
 

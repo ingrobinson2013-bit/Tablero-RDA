@@ -109,8 +109,8 @@ export default function VentasPage() {
                 <>
                   {/* Filas de días */}
                   {semana.days.map((d, i) => {
-                    const delPct = d.orders > 0 ? (d.delivered / d.orders) * 100 : 0;
-                    const retPct = d.orders > 0 ? (d.returned  / d.orders) * 100 : 0;
+                    const delPct = d.confirmed > 0 ? (d.delivered / d.confirmed) * 100 : 0;
+                    const retPct = d.confirmed > 0 ? (d.returned  / d.confirmed) * 100 : 0;
                     return (
                       <tr key={d.date} className="border-b border-outline-variant/30 hover:bg-surface-container/50 transition-colors">
                         <td className="px-4 py-2.5 font-mono text-on-surface-variant text-xs">{fmtDate(d.date)}</td>
@@ -131,8 +131,8 @@ export default function VentasPage() {
                   {/* Fila subtotal semanal */}
                   {(() => {
                     const t = semana.totals;
-                    const delPct = t.orders > 0 ? (t.delivered / t.orders) * 100 : 0;
-                    const retPct = t.orders > 0 ? (t.returned  / t.orders) * 100 : 0;
+                    const delPct = t.confirmed > 0 ? (t.delivered / t.confirmed) * 100 : 0;
+                    const retPct = t.confirmed > 0 ? (t.returned  / t.confirmed) * 100 : 0;
                     return (
                       <tr key={`sub-${semana.weekKey}`} className="border-b-2 border-indigo-500/20 bg-indigo-500/5">
                         <td className="px-4 py-3 font-bold text-indigo-600 text-xs uppercase tracking-wide" colSpan={1}>
